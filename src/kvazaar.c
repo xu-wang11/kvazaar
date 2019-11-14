@@ -88,6 +88,7 @@ static kvz_encoder * kvazaar_open(const kvz_config *cfg)
     goto kvazaar_open_failure;
   }
 
+  //初始化编码器的控制器的变量
   encoder->control = kvz_encoder_control_init(cfg);
   if (!encoder->control) {
     goto kvazaar_open_failure;
@@ -106,12 +107,41 @@ static kvz_encoder * kvazaar_open(const kvz_config *cfg)
     goto kvazaar_open_failure;
   }
 
+  //每一个并行帧都指定了同一个control
   for (unsigned i = 0; i < encoder->num_encoder_states; ++i) {
     encoder->states[i].encoder_control = encoder->control;
 
     if (!kvz_encoder_state_init(&encoder->states[i], NULL)) {
       goto kvazaar_open_failure;
     }
+	
+	for (int j = 0; cfg->tiles_encoding_priority[j] >= 0; j++) {
+		int priority_tile = cfg->tiles_encoding_priority[j];
+		encoder->states[i].children[priority_tile].encoding_priority = 1;
+		/*
+		if (priority_tile > 0) {
+			for (int k = priority_tile - 1; k >= 0; k--) {
+				encoder->states[i].children[k + 1] = encoder->states[i].children[k];
+			}
+			encoder->states[i].children[0] = priority_tile_state;
+		}*/
+		 
+	}
+
+	/*{
+		int m, n;
+		encoder_state_t* child_state = &encoder->states[i];
+		for (m = 0; child_state->children[m].encoder_control; ++m) {
+			for (n = 0; child_state->children[m].children[n].encoder_control; ++n) {
+				child_state->children[m].children[n].parent = &child_state->children[m];
+			}
+			for (n = 0; n < child_state->children[m].lcu_order_count; ++n) {
+				child_state->children[m].lcu_order[n].encoder_state = &child_state->children[m];
+			}
+			child_state->children[m].cabac.stream = &child_state->children[m].stream;
+		}
+	}
+	*/
 
     encoder->states[i].frame->QP = (int8_t)cfg->qp;
   }

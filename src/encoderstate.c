@@ -611,6 +611,7 @@ static void set_cu_qps(encoder_state_t *state, int x, int y, int depth, int *las
 
 static void encoder_state_worker_encode_lcu(void * opaque)
 {
+	fprintf(stdout, "encoding lcu\n");
   const lcu_order_element_t * const lcu = opaque;
   encoder_state_t *state = lcu->encoder_state;
   const encoder_control_t * const encoder = state->encoder_control;
@@ -849,7 +850,9 @@ static void encoder_state_encode(encoder_state_t * const main_state);
 
 static void encoder_state_worker_encode_children(void * opaque)
 {
+	
   encoder_state_t *sub_state = opaque;
+  fprintf(stdout, "encode children type: %d, id: %d\n", sub_state->type, sub_state->lcu_order);
   encoder_state_encode(sub_state);
 
   if (sub_state->is_leaf && sub_state->type == ENCODER_STATE_TYPE_WAVEFRONT_ROW) {

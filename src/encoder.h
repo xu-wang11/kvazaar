@@ -105,7 +105,7 @@ typedef struct encoder_control_t
 
   //Slices
   int slice_count;
-  const int* slice_addresses_in_ts;
+  const int* slice_addresses_in_ts; // 每一个tile对应一个slice，这个地址为每一个tile的第一个lcu的ts,如果仅仅是slice的话，就是平均分图片的slice
 
   threadqueue_queue_t *threadqueue;
 

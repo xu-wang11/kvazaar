@@ -87,6 +87,7 @@ int kvz_config_init(kvz_config *cfg)
   cfg->tiles_height_count = 1;
   cfg->tiles_width_split  = NULL;
   cfg->tiles_height_split = NULL;
+  cfg->tiles_encoding_priority = NULL;
 
   cfg->wpp = 1;
   cfg->owf = -1;
@@ -841,7 +842,7 @@ int kvz_config_parse(kvz_config *cfg, const char *name, const char *value)
       fprintf(stderr, "Invalid number of tiles (0 < %d <= %d = MAX_TILES_PER_DIM)!\n", height, MAX_TILES_PER_DIM);
       return 0;
     }
-
+	        
     // Free split arrays incase they have already been set by another parameter.
     FREE_POINTER(cfg->tiles_width_split);
     FREE_POINTER(cfg->tiles_height_split);
@@ -859,6 +860,37 @@ int kvz_config_parse(kvz_config *cfg, const char *name, const char *value)
     }
 
     return 1;
+  }
+  else if OPT("tiles-encoding-priority") {
+	  int32_t max_tile_id = cfg->tiles_width_count * cfg->tiles_height_count;
+
+	  // 最后一个为边界位
+	  int32_t* values = (int32_t*)malloc(sizeof(int32_t) * (max_tile_id + 1));
+	  const char* current_arg = value;
+	  int32_t current_value;
+
+	  int32_t priority_index = 0;
+	  do {
+		  int ret = sscanf(current_arg, "%d", &current_value);
+		  if (ret != 1) {
+			  fprintf(stderr, "Could not parse integer \"%s\"!\n", current_arg);
+			  return 0;
+		  }
+		  current_arg = strchr(current_arg, ',');
+		  //Skip the , if we found one
+		  if (current_arg) ++current_arg;
+		  if (current_value >= max_tile_id)
+		  {
+			  fprintf(stderr, "tile id is incorrect.");
+		  }
+		  values[priority_index] = current_value;
+		  ++priority_index;
+		  if (max_tile_id <= priority_index) {
+			  fprintf(stderr, "priority tile is too much.");
+		  }
+	  } while (current_arg);
+	  values[priority_index] = -1;
+	  cfg->tiles_encoding_priority = values;
   }
   else if OPT("wpp")
     cfg->wpp = atobool(value);

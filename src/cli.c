@@ -81,6 +81,7 @@ static const struct option long_options[] = {
   { "tiles",              required_argument, NULL, 0 },
   { "tiles-width-split",  required_argument, NULL, 0 },
   { "tiles-height-split", required_argument, NULL, 0 },
+  { "tiles-encoding-priority", required_argument, NULL, 0 },
   { "wpp",                      no_argument, NULL, 0 },
   { "no-wpp",                   no_argument, NULL, 0 },
   { "owf",                required_argument, NULL, 0 },

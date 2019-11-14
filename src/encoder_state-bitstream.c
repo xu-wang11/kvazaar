@@ -1068,7 +1068,10 @@ void kvz_encoder_state_write_bitstream(encoder_state_t * const state)
 
 void kvz_encoder_state_worker_write_bitstream(void * opaque)
 {
-  kvz_encoder_state_write_bitstream((encoder_state_t *) opaque);
+	encoder_state_t* state = (encoder_state_t *)opaque;
+	fprintf(stdout, "write bitstream type:%d, id: %d\n", state->type, state->lcu_order);
+  kvz_encoder_state_write_bitstream(state);
+ 
 }
 
 void kvz_encoder_state_write_parameter_sets(bitstream_t *stream,

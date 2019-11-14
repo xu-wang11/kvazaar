@@ -315,6 +315,7 @@ int kvz_encoder_state_init(encoder_state_t * const child_state, encoder_state_t 
   child_state->must_code_qp_delta = false;
   child_state->tqj_bitstream_written = NULL;
   child_state->tqj_recon_done = NULL;
+  child_state->encoding_priority = 0;
   
   if (!parent_state) {
     const encoder_control_t * const encoder = child_state->encoder_control;
@@ -668,6 +669,7 @@ int kvz_encoder_state_init(encoder_state_t * const child_state, encoder_state_t 
       return 0;
     }
   }
+
   
 #ifdef KVZ_DEBUG_PRINT_THREADING_INFO
   if (!parent_state) encoder_state_dump_graphviz(child_state);

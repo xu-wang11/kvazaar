@@ -321,11 +321,14 @@ encoder_control_t* kvz_encoder_control_init(const kvz_config *const cfg)
   }
 
   kvz_scalinglist_process(&encoder->scaling_list, encoder->bitdepth);
-
+  
+  //初始化了width_in_lcu 和height_in_lcu的变量
   kvz_encoder_control_input_init(encoder, encoder->cfg.width, encoder->cfg.height);
 
   if (encoder->cfg.framerate_num != 0) {
     double framerate = encoder->cfg.framerate_num / (double)encoder->cfg.framerate_denom;
+
+	//bppic 应该是每一帧的比特率的意思
     encoder->target_avg_bppic = encoder->cfg.target_bitrate / framerate;
   } else {
     encoder->target_avg_bppic = encoder->cfg.target_bitrate / encoder->cfg.framerate;
@@ -370,6 +373,7 @@ encoder_control_t* kvz_encoder_control_init(const kvz_config *const cfg)
     const int num_ctbs = encoder->in.width_in_lcu * encoder->in.height_in_lcu;
 
     //Temporary pointers to allow encoder fields to be const
+	//bd为border的意思
     int32_t *tiles_col_width, *tiles_row_height, *tiles_ctb_addr_rs_to_ts, *tiles_ctb_addr_ts_to_rs, *tiles_tile_id, *tiles_col_bd, *tiles_row_bd;
 
     if (encoder->cfg.tiles_width_count > encoder->in.width_in_lcu) {
@@ -461,6 +465,11 @@ encoder_control_t* kvz_encoder_control_init(const kvz_config *const cfg)
 
     //(6-7) in ITU-T Rec. H.265 (04/2013)
     //j == ctbAddrRs
+	// tiles_ctb_addr_rs_to_ts 是先按照tile的编号顺序
+	// |1.2.3|10.11.12|
+	// |4.5.6|13.14.15|
+	// |7.8.9|16.17.18|
+
     for (int j = 0; j < num_ctbs; ++j) {
       int tileX = 0, tileY = 0;
       int tbX = j % encoder->in.width_in_lcu;
@@ -484,7 +493,8 @@ encoder_control_t* kvz_encoder_control_init(const kvz_config *const cfg)
       tiles_ctb_addr_rs_to_ts[j] += (tbY - tiles_row_bd[tileY]) * tiles_col_width[tileX] +
                                      tbX - tiles_col_bd[tileX];
     }
-
+	
+	// tiles_ctb_addr_ts_to_rs 是正常的每一个lcu的编号
     //(6-8) in ITU-T Rec. H.265 (04/2013)
     //Make reverse map from tile scan to raster scan
     for (int j = 0; j < num_ctbs; ++j) {
@@ -509,6 +519,8 @@ encoder_control_t* kvz_encoder_control_init(const kvz_config *const cfg)
       encoder->pps.dependent_slice_segments_enabled_flag = 1;
     }
 
+	// 
+	// slice_addresses_in_ts 这个指定了每一个slice中包含的第一个lcu
     //Slices
     if (encoder->cfg.slices & KVZ_SLICES_TILES) {
       // Configure a single independent slice per tile.
@@ -693,9 +705,11 @@ void kvz_encoder_control_input_init(encoder_control_t * const encoder,
     encoder->in.height += CU_MIN_SIZE_PIXELS - (height % CU_MIN_SIZE_PIXELS);
   }
 
+  
   encoder->in.height_in_lcu = encoder->in.height / LCU_WIDTH;
   encoder->in.width_in_lcu  = encoder->in.width / LCU_WIDTH;
 
+  // 上面先通过补像素的方法，让图片能至少被分割成最小的cu，LCU_WIDTH 是最大的CU,所以如果没有整除的话需要加1
   // Add one extra LCU when image not divisible by LCU_WIDTH
   if (encoder->in.height_in_lcu * LCU_WIDTH < height) {
     encoder->in.height_in_lcu++;

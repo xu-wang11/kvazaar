@@ -296,6 +296,9 @@ typedef struct kvz_config
   int32_t* tiles_width_split;      /*!< \brief tiles split x coordinates (dimension: tiles_width_count) */
   int32_t* tiles_height_split;      /*!< \brief tiles split y coordinates (dimension: tiles_height_count) */
 
+  // Ìí¼Ótile priority
+  int32_t* tiles_encoding_priority; /*Ä¬ÈÏÎª0£¬1£¬2£¬3£¬4...*/
+  
   int wpp;
   int owf;
 
