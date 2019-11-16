@@ -1329,12 +1329,14 @@ void kvz_encode_one_frame(encoder_state_t * const state, kvz_picture* frame)
 	  _encode_one_frame_add_bitstream_deps(&(state->children[i]), job);
 	  kvz_threadqueue_job_dep_add(job, job1);
 	  kvz_threadqueue_job_dep_add(job2, job);
+	  /*
 	  if (i == 0) {
 		  first_job = job;
 	  }
 	  else {
 		  kvz_threadqueue_job_dep_add(job, first_job);
 	  }
+	  */
 	  kvz_threadqueue_submit(state->encoder_control->threadqueue, job);
   }
 

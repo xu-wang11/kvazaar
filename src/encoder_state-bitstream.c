@@ -849,7 +849,7 @@ void kvz_encoder_state_write_bitstream_slice_header(
 
   WRITE_UE(stream, 0, "slice_pic_parameter_set_id");
 
-  if (!first_slice_segment_in_pic) {
+  if (1/*!first_slice_segment_in_pic*/) {
     if (encoder->pps.dependent_slice_segments_enabled_flag) {
       WRITE_U(stream, !independent, 1, "dependent_slice_segment_flag");
     }
