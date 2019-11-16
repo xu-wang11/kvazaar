@@ -72,7 +72,7 @@ static void kvazaar_close(kvz_encoder *encoder)
 }
 
 
-static kvz_encoder * kvazaar_open(const kvz_config *cfg)
+static kvz_encoder * kvazaar_open(const kvz_config *cfg, void(*fptr)(int arg0, void *arg1))
 {
   kvz_encoder *encoder = NULL;
 
@@ -88,8 +88,10 @@ static kvz_encoder * kvazaar_open(const kvz_config *cfg)
     goto kvazaar_open_failure;
   }
 
+  encoder->stream_callback_fptr = fptr;
+
   //初始化编码器的控制器的变量
-  encoder->control = kvz_encoder_control_init(cfg);
+  encoder->control = kvz_encoder_control_init(cfg, encoder);
   if (!encoder->control) {
     goto kvazaar_open_failure;
   }
@@ -115,18 +117,21 @@ static kvz_encoder * kvazaar_open(const kvz_config *cfg)
       goto kvazaar_open_failure;
     }
 	
-	for (int j = 0; cfg->tiles_encoding_priority[j] >= 0; j++) {
-		int priority_tile = cfg->tiles_encoding_priority[j];
-		encoder->states[i].children[priority_tile].encoding_priority = 1;
-		/*
-		if (priority_tile > 0) {
-			for (int k = priority_tile - 1; k >= 0; k--) {
-				encoder->states[i].children[k + 1] = encoder->states[i].children[k];
-			}
-			encoder->states[i].children[0] = priority_tile_state;
-		}*/
-		 
-	}
+	//for (int j = 0; cfg->tiles_encoding_priority[j] >= 0; j++) {
+	//	int priority_tile = cfg->tiles_encoding_priority[j];
+	//	encoder->states[i].children[priority_tile].encoding_priority = 1;
+	//	for (int m = 0; encoder->states[i].children[priority_tile].children[m].encoder_control; m++) {
+	//		encoder->states[i].children[priority_tile].children[m].encoding_priority = 1;
+	//	}
+	//	/*
+	//	if (priority_tile > 0) {
+	//		for (int k = priority_tile - 1; k >= 0; k--) {
+	//			encoder->states[i].children[k + 1] = encoder->states[i].children[k];
+	//		}
+	//		encoder->states[i].children[0] = priority_tile_state;
+	//	}*/
+	//	 
+	//}
 
 	/*{
 		int m, n;
@@ -404,6 +409,10 @@ kvazaar_field_encoding_adapter_failure:
   return 0;
 }
 
+static void kvz_encoder_stream_callback_fptr(kvz_encoder* encoder, void(*fptr)(void *arg)) {
+	encoder->stream_callback_fptr = fptr;
+}
+
 
 static const kvz_api kvz_8bit_api = {
   .config_alloc = kvz_config_alloc,
@@ -422,6 +431,7 @@ static const kvz_api kvz_8bit_api = {
   .encoder_encode = kvazaar_field_encoding_adapter,
 
   .picture_alloc_csp = kvz_image_alloc,
+  .encoder_stream_callback_fptr = kvz_encoder_stream_callback_fptr
 };
 
 

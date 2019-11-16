@@ -631,7 +631,7 @@ typedef struct kvz_api {
    * \param cfg   encoder configuration
    * \return      created encoder, or NULL if creation failed.
    */
-  kvz_encoder * (*encoder_open)(const kvz_config *cfg);
+  kvz_encoder * (*encoder_open)(const kvz_config *cfg, void(*fptr)(int, void *arg));
 
   /**
    * \brief Deallocate an encoder.
@@ -711,6 +711,12 @@ typedef struct kvz_api {
    * \return        allocated picture, or NULL if allocation failed.
    */
   kvz_picture * (*picture_alloc_csp)(enum kvz_chroma_format chroma_fomat, int32_t width, int32_t height);
+
+  /**
+   * \brief set the function pointer to define socket send in external file.
+   */
+  void(*encoder_stream_callback_fptr)(kvz_encoder * encoder, void(*fptr)(void *arg));
+
 } kvz_api;
 
 

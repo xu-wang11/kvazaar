@@ -27,8 +27,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+#include "encoderstate.h"
 #include "threads.h"
 
+
+typedef struct encoder_control_t encoder_control_t;
 
 /**
  * \file
@@ -81,6 +85,7 @@
     assert(0); \
     return 0; \
   }
+
 
 
 typedef enum {
@@ -209,6 +214,11 @@ struct threadqueue_queue_t {
    * \brief Pointer to the last ready job
    */
   threadqueue_job_t *last;
+
+  /*
+  * \brief Pointer to the encoder
+  */
+  kvz_encoder* encoder;
 };
 
 
@@ -226,12 +236,50 @@ static void threadqueue_push_job(threadqueue_queue_t * threadqueue,
 
   if (threadqueue->first == NULL) {
     threadqueue->first = job;
+	threadqueue->last = job;
+	job->next = NULL;
   } else {
-    threadqueue->last->next = job;
+	  encoder_state_t* state = (encoder_state_t*)job->arg;
+	  int tile_id = -1;
+	  // assign priority
+	  if (state->type == ENCODER_STATE_TYPE_SLICE) {
+		  tile_id = state->slice->id;
+	  }
+	  else if (state->type == ENCODER_STATE_TYPE_TILE) {
+		  tile_id = state->tile->id;
+	  }
+	  struct kvz_encoder* encoder = threadqueue->encoder;
+	  int32_t* priority_arr = encoder->control->cfg.tiles_encoding_priority;
+	  for (int i = 0; priority_arr[i] >= 0; i++) {
+		  if (priority_arr[i] == tile_id) {
+			  state->encoding_priority = 1;
+		  }
+	  }
+	  
+	  threadqueue_job_t* prev = NULL;
+	  threadqueue_job_t* tail = threadqueue->first;
+	 
+
+	  while (tail != NULL && state->encoding_priority <= ((encoder_state_t*)tail->arg)->encoding_priority) {
+		  prev = tail;
+		  tail = tail->next;
+	  }
+	  if (prev == NULL) {
+		  job->next = threadqueue->first;
+		  threadqueue->first = job;
+	  }
+	  else {
+		  prev->next = job;
+		  job->next = tail;
+		  if (tail == NULL) {
+			  threadqueue->last = job;
+		  }
+	  }
+    // threadqueue->last->next = job;
   }
 
-  threadqueue->last = job;
-  job->next = NULL;
+  // threadqueue->last = job;
+  // job->next = NULL;
 }
 
 
@@ -342,7 +390,7 @@ static void* threadqueue_worker(void* threadqueue_opaque)
  *
  * \return 1 on success, 0 on failure
  */
-threadqueue_queue_t * kvz_threadqueue_init(int thread_count)
+threadqueue_queue_t * kvz_threadqueue_init(int thread_count, kvz_encoder* encoder)
 {
   threadqueue_queue_t *threadqueue = MALLOC(threadqueue_queue_t, 1);
   if (!threadqueue) {
@@ -388,6 +436,8 @@ threadqueue_queue_t * kvz_threadqueue_init(int thread_count)
     threadqueue->thread_running_count++;
   }
   PTHREAD_UNLOCK(&threadqueue->lock);
+
+  threadqueue->encoder = encoder;
 
   return threadqueue;
 

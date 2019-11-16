@@ -49,6 +49,11 @@
 #include "threads.h"
 #include "yuv_io.h"
 
+FILE **output = NULL; //!< output file (HEVC NAL stream)
+const kvz_api * api;
+
+pthread_mutex_t file_lock;
+
 /**
  * \brief Open a file for reading.
  *
@@ -305,6 +310,48 @@ void output_recon_pictures(const kvz_api *const api,
   } while (picture_written);
 }
 
+void write_data(int tile_id, void* data) {
+	
+	pthread_mutex_lock(&file_lock);
+	
+	kvz_data_chunk* chunks_out = data;
+	if (chunks_out != NULL) {
+		uint64_t written = 0;
+		// Write data into the output file.
+		for (kvz_data_chunk *chunk = chunks_out;
+			chunk != NULL;
+			chunk = chunk->next) {
+			//assert(written + chunk->len <= len_out);
+			if (tile_id < 0) {
+				for (int i = 0; i < 9; i++) {
+					if (fwrite(chunk->data, sizeof(uint8_t), chunk->len, output[i]) != chunk->len) {
+						fprintf(stderr, "Failed to write data to file.\n");
+					}
+					//fflush(output[i]);
+				}
+			}
+			else {
+				if (fwrite(chunk->data, sizeof(uint8_t), chunk->len, output[tile_id]) != chunk->len) {
+					fprintf(stderr, "Failed to write data to file.\n");
+				}
+				//fflush(output[tile_id]);
+			}
+			written += chunk->len;
+		}
+		if (tile_id < 0) {
+			for (int i = 0; i < 9; i++) {
+				fflush(output[i]);
+			}
+		}
+		else {
+			fflush(output[tile_id]);
+		}
+		
+		api->chunk_free(chunks_out);
+	}
+	pthread_mutex_unlock(&file_lock);
+}
+
 
 /**
  * \brief Program main function.
@@ -314,12 +361,16 @@ void output_recon_pictures(const kvz_api *const api,
  */
 int main(int argc, char *argv[])
 {
+	if (pthread_mutex_init(&file_lock, NULL) != 0) {
+		fprintf(stderr, "pthread_mutex_init failed!\n");
+		//goto failed;
+	}
   int retval = EXIT_SUCCESS;
 
   cmdline_opts_t *opts = NULL; //!< Command line options
   kvz_encoder* enc = NULL;
   FILE *input  = NULL; //!< input file (YUV)
-  FILE *output = NULL; //!< output file (HEVC NAL stream)
+  
   FILE *recout = NULL; //!< reconstructed YUV output, --debug
   clock_t start_time = clock();
   clock_t encoding_start_cpu_time;
@@ -357,7 +408,7 @@ int main(int argc, char *argv[])
 
   CHECKPOINTS_INIT();
 
-  const kvz_api * const api = kvz_api_get(8);
+  api = kvz_api_get(8);
 
   opts = cmdline_opts_parse(api, argc, argv);
   // If problem with command line options, print banner and shutdown.
@@ -380,8 +431,13 @@ int main(int argc, char *argv[])
     fprintf(stderr, "Could not open input file, shutting down!\n");
     goto exit_failure;
   }
-
-  output = open_output_file(opts->output);
+  output = (FILE**)malloc(sizeof(FILE*) * 9);
+  for (int i = 0; i < 9; i++) {
+	  char filename[32];
+	  sprintf(filename, "test_%d.hevc", i);
+	  output[i] = open_output_file(filename);
+  }
+  
   if (output == NULL) {
     fprintf(stderr, "Could not open output file, shutting down!\n");
     goto exit_failure;
@@ -392,9 +448,9 @@ int main(int argc, char *argv[])
   if (input == stdin) {
     _setmode(_fileno(stdin), _O_BINARY);
   }
-  if (output == stdout) {
-    _setmode(_fileno(stdout), _O_BINARY);
-  }
+  //if (output == stdout) {
+  //  _setmode(_fileno(stdout), _O_BINARY);
+  //}
 #endif
 
   if (opts->debug != NULL) {
@@ -405,7 +461,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  enc = api->encoder_open(opts->config);
+  enc = api->encoder_open(opts->config, write_data);
   if (!enc) {
     fprintf(stderr, "Failed to open encoder.\n");
     goto exit_failure;
@@ -473,6 +529,7 @@ int main(int argc, char *argv[])
       return 0;
     }
     kvz_picture *cur_in_img;
+	//api->encoder_stream_callback_fptr(encoder, write_data);
     for (;;) {
 
       // Skip mutex locking if the input thread does not exist.
@@ -517,93 +574,7 @@ int main(int argc, char *argv[])
         break;
       }
 
-      if (chunks_out != NULL) {
-        uint64_t written = 0;
-        // Write data into the output file.
-        for (kvz_data_chunk *chunk = chunks_out;
-             chunk != NULL;
-             chunk = chunk->next) {
-          assert(written + chunk->len <= len_out);
-          if (fwrite(chunk->data, sizeof(uint8_t), chunk->len, output) != chunk->len) {
-            fprintf(stderr, "Failed to write data to file.\n");
-            api->picture_free(cur_in_img);
-            api->chunk_free(chunks_out);
-            goto exit_failure;
-          }
-          written += chunk->len;
-        }
-        fflush(output);
-
-        bitstream_length += len_out;
-        
-        // the level's bitrate check
-        frames_this_second += 1;
-
-        if ((float)frames_this_second >= framerate) {
-          // if framerate <= 1 then we go here always
-
-          // how much of the bits of the last frame belonged to the next second
-          uint64_t leftover_bits = (uint64_t)((double)len_out * ((double)frames_this_second - framerate));
-
-          // the latest frame is counted for the amount that it contributed to this current second
-          bits_this_second += len_out - leftover_bits;
-
-          if (bits_this_second > encoder->cfg.max_bitrate) {
-            fprintf(stderr, "Level warning: This %s's bitrate (%llu bits/s) reached the maximum bitrate (%u bits/s) of %s tier level %g.",
-              framerate >= 1.0f ? "second" : "frame",
-              (unsigned long long) bits_this_second,
-              encoder->cfg.max_bitrate,
-              encoder->cfg.high_tier ? "high" : "main",
-              (float)encoder->cfg.level / 10.0f );
-          }
-
-          if (framerate > 1.0f) {
-            // leftovers for the next second
-            bits_this_second = leftover_bits;
-          } else {
-            // one or more next seconds are from this frame and their bitrate is the same or less as this frame's
-            bits_this_second = 0;
-          }
-          frames_this_second = 0;
-        } else {
-          bits_this_second += len_out;
-        }
-
-        // Compute and print stats.
-
-        double frame_psnr[3] = { 0.0, 0.0, 0.0 };
-        if (encoder->cfg.calc_psnr && encoder->cfg.source_scan_type == KVZ_INTERLACING_NONE) {
-          // Do not compute PSNR for interlaced frames, because img_rec does not contain
-          // the deinterlaced frame yet.
-          compute_psnr(img_src, img_rec, frame_psnr);
-        }
-
-        if (recout) {
-          // Since chunks_out was not NULL, img_rec should have been set.
-          assert(img_rec);
-
-          // Move img_rec to the recon buffer.
-          assert(recon_buffer_size < KVZ_MAX_GOP_LENGTH);
-          recon_buffer[recon_buffer_size++] = img_rec;
-          img_rec = NULL;
-
-          // Try to output some reconstructed pictures.
-          output_recon_pictures(api,
-                                recout,
-                                recon_buffer,
-                                &recon_buffer_size,
-                                &next_recon_pts,
-                                opts->config->width,
-                                opts->config->height);
-        }
-
-        frames_done += 1;
-        psnr_sum[0] += frame_psnr[0];
-        psnr_sum[1] += frame_psnr[1];
-        psnr_sum[2] += frame_psnr[2];
-
-        print_frame_info(&info_out, frame_psnr, len_out, encoder->cfg.calc_psnr);
-      }
+     
 
       api->picture_free(cur_in_img);
       api->chunk_free(chunks_out);
@@ -660,7 +631,10 @@ done:
 
   // close files
   if (input)  fclose(input);
-  if (output) fclose(output);
+  if (output) {
+	for(int i = 0; i < 9; i ++)
+	  fclose(output[i]);
+  }
   if (recout) fclose(recout);
 
   CHECKPOINTS_FINALIZE();

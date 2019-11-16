@@ -133,9 +133,11 @@ typedef struct encoder_control_t
     int down;
   } max_inter_ref_lcu;
 
+  void(*stream_callback_fptr)(int arg0, void *arg1);
+
 } encoder_control_t;
 
-encoder_control_t* kvz_encoder_control_init(const kvz_config *cfg);
+encoder_control_t* kvz_encoder_control_init(const kvz_config *cfg, kvz_encoder* enc);
 void kvz_encoder_control_free(encoder_control_t *encoder);
 
 void kvz_encoder_control_input_init(encoder_control_t *encoder, int32_t width, int32_t height);

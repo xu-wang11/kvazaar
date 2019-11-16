@@ -40,9 +40,18 @@ void kvz_encoder_state_write_bitstream_slice_header(
     struct encoder_state_t * const state,
     bool independent);
 void kvz_encoder_state_write_bitstream(struct encoder_state_t * const state);
-void kvz_encoder_state_write_bitstream_leaf(struct encoder_state_t * const state);
+// void kvz_encoder_state_write_bitstream_leaf(struct encoder_state_t * const state);
 void kvz_encoder_state_worker_write_bitstream(void * opaque);
+
+void kvz_encoder_state_worker_parameters_bitstream(void * opaque);
+
+void kvz_encoder_state_worker_finish_frame_bitstream(void *opaque);
+
+void kvz_encoder_state_worker_slice_bitstream(void * opaque);
+
 void kvz_encoder_state_write_parameter_sets(struct bitstream_t *stream,
                                             struct encoder_state_t * const state);
+
+
 
 #endif // ENCODER_STATE_BITSTREAM_H_

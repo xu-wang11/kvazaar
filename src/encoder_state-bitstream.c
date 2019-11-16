@@ -832,7 +832,8 @@ void kvz_encoder_state_write_bitstream_slice_header(
   printf("=========== Slice ===========\n");
 #endif
 
-  bool first_slice_segment_in_pic = (state->slice->start_in_rs == 0);
+  //bool first_slice_segment_in_pic = (state->slice->start_in_rs == 0);
+  bool first_slice_segment_in_pic = true;
   if ((state->encoder_control->cfg.slices & KVZ_SLICES_WPP)
       && state->wfrow->lcu_offset_y > 0)
   {
@@ -1069,9 +1070,119 @@ void kvz_encoder_state_write_bitstream(encoder_state_t * const state)
 void kvz_encoder_state_worker_write_bitstream(void * opaque)
 {
 	encoder_state_t* state = (encoder_state_t *)opaque;
-	fprintf(stdout, "write bitstream type:%d, id: %d\n", state->type, state->lcu_order);
-  kvz_encoder_state_write_bitstream(state);
+	//fprintf(stdout, "write bitstream type:%d, id: %d\n", state->type, state->lcu_order);
+	kvz_encoder_state_write_bitstream(state);
  
+}
+
+void kvz_encoder_state_worker_parameters_bitstream(void * opaque) {
+	encoder_state_t* state = (encoder_state_t *)opaque;
+	const encoder_control_t * const encoder = state->encoder_control;
+	bitstream_t * const stream = &state->stream;
+	uint64_t curpos = kvz_bitstream_tell(stream);
+
+	// The first NAL unit of the access unit must use a long start code.
+	state->frame->first_nal = true;
+
+	// Access Unit Delimiter (AUD)
+	if (encoder->cfg.aud_enable) {
+		state->frame->first_nal = false;
+		encoder_state_write_bitstream_aud(state);
+	}
+
+	if (encoder_state_must_write_vps(state)) {
+		state->frame->first_nal = false;
+		kvz_encoder_state_write_parameter_sets(&state->stream, state);
+	}
+
+	// Send Kvazaar version information only in the first frame.
+	if (state->frame->num == 0 && encoder->cfg.add_encoder_info) {
+		kvz_nal_write(stream, KVZ_NAL_PREFIX_SEI_NUT, 0, state->frame->first_nal);
+		state->frame->first_nal = false;
+		encoder_state_write_bitstream_prefix_sei_version(state);
+
+		// spec:sei_rbsp() rbsp_trailing_bits
+		kvz_bitstream_add_rbsp_trailing_bits(stream);
+	}
+
+	//SEI messages for interlacing
+	if (encoder->vui.frame_field_info_present_flag) {
+		// These should be optional, needed for earlier versions
+		// of HM decoder to accept bitstream
+		//kvz_nal_write(stream, KVZ_NAL_PREFIX_SEI_NUT, 0, 0);
+		//encoder_state_write_active_parameter_sets_sei_message(state);
+		//kvz_bitstream_rbsp_trailing_bits(stream);
+
+		kvz_nal_write(stream, KVZ_NAL_PREFIX_SEI_NUT, 0, state->frame->first_nal);
+		state->frame->first_nal = false;
+		encoder_state_write_picture_timing_sei_message(state);
+
+		// spec:sei_rbsp() rbsp_trailing_bits
+		kvz_bitstream_add_rbsp_trailing_bits(stream);
+	}
+
+	//encoder_state_write_bitstream_children(state);
+
+	//if (state->encoder_control->cfg.hash != KVZ_HASH_NONE) {
+	//	// Calculate checksum
+	//	add_checksum(state);
+	//}
+	
+	kvz_data_chunk* chunks = kvz_bitstream_take_chunks(&state->stream);
+	state->encoder_control->stream_callback_fptr(-1, chunks);
+
+	//Get bitstream length for stats
+	uint64_t newpos = kvz_bitstream_tell(stream);
+	state->stats_bitstream_length = (newpos >> 3) - (curpos >> 3);
+
+	if (state->frame->num > 0) {
+		state->frame->total_bits_coded = state->previous_encoder_state->frame->total_bits_coded;
+	}
+	state->frame->total_bits_coded += newpos - curpos;
+
+	state->frame->cur_gop_bits_coded = state->previous_encoder_state->frame->cur_gop_bits_coded;
+	state->frame->cur_gop_bits_coded += newpos - curpos;
+	
+}
+
+void kvz_encoder_state_worker_finish_frame_bitstream(void *opaque) {
+	//do nothing
+	encoder_state_t* state = (encoder_state_t *)opaque;
+	fprintf(stdout, "finish frame id: %d", state->frame->num);	
+}
+
+
+void kvz_encoder_state_worker_slice_bitstream(void * opaque)
+{
+	encoder_state_t* state = (encoder_state_t *)opaque;
+	assert(state->type == ENCODER_STATE_TYPE_SLICE);
+	encoder_state_write_slice_header(&state->stream, state, true);
+	
+	
+		for (int i = 0; state->children[i].encoder_control; ++i) {
+			if (state->children[i].type == ENCODER_STATE_TYPE_SLICE) {
+				encoder_state_write_slice_header(&state->stream, &state->children[i], true);
+			}
+			else if (state->children[i].type == ENCODER_STATE_TYPE_WAVEFRONT_ROW) {
+				if ((state->encoder_control->cfg.slices & KVZ_SLICES_WPP) && i != 0) {
+					// Add header for dependent WPP row slice.
+					encoder_state_write_slice_header(&state->stream, &state->children[i], false);
+				}
+			}
+			kvz_encoder_state_write_bitstream(&state->children[i]);
+			kvz_bitstream_move(&state->stream, &state->children[i].stream);
+
+		}
+	
+ 	kvz_data_chunk* chunks = kvz_bitstream_take_chunks(&state->stream);
+	state->encoder_control->stream_callback_fptr(state->slice->id, chunks);
+
+	uint64_t newpos = kvz_bitstream_tell(&state->stream);
+	state->parent->stats_bitstream_length += (newpos >> 3);
+
+	state->parent->frame->total_bits_coded += newpos;
+
+	state->parent->frame->cur_gop_bits_coded += newpos;
 }
 
 void kvz_encoder_state_write_parameter_sets(bitstream_t *stream,

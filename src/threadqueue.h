@@ -28,12 +28,16 @@
 
 #include "global.h" // IWYU pragma: keep
 
+#include "kvazaar_internal.h"
+#include "kvazaar.h"
 #include <pthread.h>
+
+//typedef struct kvz_encoder kvz_encoder;
 
 typedef struct threadqueue_job_t threadqueue_job_t;
 typedef struct threadqueue_queue_t threadqueue_queue_t;
 
-threadqueue_queue_t * kvz_threadqueue_init(int thread_count);
+threadqueue_queue_t * kvz_threadqueue_init(int thread_count, kvz_encoder* encoder);
 
 threadqueue_job_t * kvz_threadqueue_job_create(void (*fptr)(void *arg), void *arg);
 int kvz_threadqueue_submit(threadqueue_queue_t * threadqueue, threadqueue_job_t *job);

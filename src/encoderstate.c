@@ -1308,18 +1308,39 @@ void kvz_encode_one_frame(encoder_state_t * const state, kvz_picture* frame)
   encoder_state_init_new_frame(state, frame);
   encoder_state_encode(state);
 
-  threadqueue_job_t *job =
-    kvz_threadqueue_job_create(kvz_encoder_state_worker_write_bitstream, state);
+  threadqueue_job_t *job1 =
+	  kvz_threadqueue_job_create(kvz_encoder_state_worker_parameters_bitstream, state);
 
-  _encode_one_frame_add_bitstream_deps(state, job);
+  threadqueue_job_t *job2 =
+	  kvz_threadqueue_job_create(kvz_encoder_state_worker_finish_frame_bitstream, state);
+
+  //_encode_one_frame_add_bitstream_deps(state, job);
   if (state->previous_encoder_state != state && state->previous_encoder_state->tqj_bitstream_written) {
-    //We need to depend on previous bitstream generation
-    kvz_threadqueue_job_dep_add(job, state->previous_encoder_state->tqj_bitstream_written);
+	  //We need to depend on previous bitstream generation
+	  kvz_threadqueue_job_dep_add(job1, state->previous_encoder_state->tqj_bitstream_written);
   }
-  kvz_threadqueue_submit(state->encoder_control->threadqueue, job);
-  assert(!state->tqj_bitstream_written);
-  state->tqj_bitstream_written = job;
+  kvz_threadqueue_submit(state->encoder_control->threadqueue, job1);
+  // assert(!state->tqj_bitstream_written);
+  // state->tqj_bitstream_written = job;
+  threadqueue_job_t *first_job = NULL;
+  for (int i = 0; state->children[i].encoder_control; i++) {
+	  threadqueue_job_t *job =
+		  kvz_threadqueue_job_create(kvz_encoder_state_worker_slice_bitstream, &(state->children[i]));
+	  _encode_one_frame_add_bitstream_deps(&(state->children[i]), job);
+	  kvz_threadqueue_job_dep_add(job, job1);
+	  kvz_threadqueue_job_dep_add(job2, job);
+	  if (i == 0) {
+		  first_job = job;
+	  }
+	  else {
+		  kvz_threadqueue_job_dep_add(job, first_job);
+	  }
+	  kvz_threadqueue_submit(state->encoder_control->threadqueue, job);
+  }
 
+  kvz_threadqueue_submit(state->encoder_control->threadqueue, job2);
+  assert(!state->tqj_bitstream_written);
+  state->tqj_bitstream_written = job2;
   state->frame->done = 0;
 }
 

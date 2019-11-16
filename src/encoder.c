@@ -203,7 +203,7 @@ static void init_erp_aqp_roi(encoder_control_t* encoder,
  * \param cfg   encoder configuration
  * \return      initialized encoder control or NULL on failure
  */
-encoder_control_t* kvz_encoder_control_init(const kvz_config *const cfg)
+encoder_control_t* kvz_encoder_control_init(const kvz_config *const cfg, kvz_encoder* enc)
 {
   encoder_control_t *encoder = NULL;
 
@@ -222,6 +222,8 @@ encoder_control_t* kvz_encoder_control_init(const kvz_config *const cfg)
     fprintf(stderr, "Failed to allocate encoder control.\n");
     goto init_failed;
   }
+
+  encoder->stream_callback_fptr = enc->stream_callback_fptr;
 
   // Take a copy of the config.
   memcpy(&encoder->cfg, cfg, sizeof(encoder->cfg));
@@ -286,7 +288,7 @@ encoder_control_t* kvz_encoder_control_init(const kvz_config *const cfg)
     }
   }
 
-  encoder->threadqueue = kvz_threadqueue_init(encoder->cfg.threads);
+  encoder->threadqueue = kvz_threadqueue_init(encoder->cfg.threads, enc);
   if (!encoder->threadqueue) {
     fprintf(stderr, "Could not initialize threadqueue.\n");
     goto init_failed;
