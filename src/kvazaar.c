@@ -90,7 +90,7 @@ static kvz_encoder * kvazaar_open(const kvz_config *cfg, void(*fptr)(int arg0, v
 
   encoder->stream_callback_fptr = fptr;
 
-  //³õÊ¼»¯±àÂëÆ÷µÄ¿ØÖÆÆ÷µÄ±äÁ¿
+  //ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½
   encoder->control = kvz_encoder_control_init(cfg, encoder);
   if (!encoder->control) {
     goto kvazaar_open_failure;
@@ -109,7 +109,7 @@ static kvz_encoder * kvazaar_open(const kvz_config *cfg, void(*fptr)(int arg0, v
     goto kvazaar_open_failure;
   }
 
-  //Ã¿Ò»¸ö²¢ÐÐÖ¡¶¼Ö¸¶¨ÁËÍ¬Ò»¸öcontrol
+  //Ã¿Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¡ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½Í¬Ò»ï¿½ï¿½control
   for (unsigned i = 0; i < encoder->num_encoder_states; ++i) {
     encoder->states[i].encoder_control = encoder->control;
 
@@ -413,9 +413,14 @@ static void kvz_encoder_stream_callback_fptr(kvz_encoder* encoder, void(*fptr)(v
 	encoder->stream_callback_fptr = fptr;
 }
 
-static int kvz_frames_to_do(kvz_encoder* encoder)
+static int kvz_frames_read(kvz_encoder* encoder)
 {
-	return encoder->frames_started - encoder->frames_done;
+	return encoder->frames_started;
+}
+
+static int kvz_frames_write(kvz_encoder* encoder)
+{
+  return encoder->frames_done;
 }
 
 static const kvz_api kvz_8bit_api = {
@@ -435,8 +440,8 @@ static const kvz_api kvz_8bit_api = {
   .encoder_encode = kvazaar_field_encoding_adapter,
 
   .picture_alloc_csp = kvz_image_alloc,
-  .encoder_stream_callback_fptr = kvz_encoder_stream_callback_fptr,
-  .frames_to_do=kvz_frames_to_do
+  .frames_read=kvz_frames_read,
+  .frames_write=kvz_frames_write
 };
 
 

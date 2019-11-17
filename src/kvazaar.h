@@ -296,8 +296,8 @@ typedef struct kvz_config
   int32_t* tiles_width_split;      /*!< \brief tiles split x coordinates (dimension: tiles_width_count) */
   int32_t* tiles_height_split;      /*!< \brief tiles split y coordinates (dimension: tiles_height_count) */
 
-  // Ìí¼Ótile priority
-  int32_t* tiles_encoding_priority; /*Ä¬ÈÏÎª0£¬1£¬2£¬3£¬4...*/
+  // ï¿½ï¿½ï¿½ï¿½tile priority
+  int32_t* tiles_encoding_priority; /*Ä¬ï¿½ï¿½Îª0ï¿½ï¿½1ï¿½ï¿½2ï¿½ï¿½3ï¿½ï¿½4...*/
   
   int wpp;
   int owf;
@@ -712,12 +712,8 @@ typedef struct kvz_api {
    */
   kvz_picture * (*picture_alloc_csp)(enum kvz_chroma_format chroma_fomat, int32_t width, int32_t height);
 
-  /**
-   * \brief set the function pointer to define socket send in external file.
-   */
-  void(*encoder_stream_callback_fptr)(kvz_encoder * encoder, void(*fptr)(void *arg));
-
-  int(*frames_to_do)(kvz_encoder* encoder);
+  int(*frames_read)(kvz_encoder* encoder);
+  int(*frames_write)(kvz_encoder* encoder);
 
 } kvz_api;
 
