@@ -1148,7 +1148,7 @@ void kvz_encoder_state_worker_parameters_bitstream(void * opaque) {
 void kvz_encoder_state_worker_finish_frame_bitstream(void *opaque) {
 	//do nothing
 	encoder_state_t* state = (encoder_state_t *)opaque;
-	fprintf(stdout, "finish frame id: %d", state->frame->num);	
+	fprintf(stdout, "finish frame id: %d\n", state->frame->num);	
 }
 
 

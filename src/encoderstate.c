@@ -611,7 +611,7 @@ static void set_cu_qps(encoder_state_t *state, int x, int y, int depth, int *las
 
 static void encoder_state_worker_encode_lcu(void * opaque)
 {
-	fprintf(stdout, "encoding lcu\n");
+	//fprintf(stdout, "encoding lcu\n");
   const lcu_order_element_t * const lcu = opaque;
   encoder_state_t *state = lcu->encoder_state;
   const encoder_control_t * const encoder = state->encoder_control;
@@ -852,7 +852,7 @@ static void encoder_state_worker_encode_children(void * opaque)
 {
 	
   encoder_state_t *sub_state = opaque;
-  fprintf(stdout, "encode children type: %d, id: %d\n", sub_state->type, sub_state->lcu_order);
+  //fprintf(stdout, "encode children type: %d, id: %d\n", sub_state->type, sub_state->lcu_order);
   encoder_state_encode(sub_state);
 
   if (sub_state->is_leaf && sub_state->type == ENCODER_STATE_TYPE_WAVEFRONT_ROW) {
@@ -1322,7 +1322,7 @@ void kvz_encode_one_frame(encoder_state_t * const state, kvz_picture* frame)
   kvz_threadqueue_submit(state->encoder_control->threadqueue, job1);
   // assert(!state->tqj_bitstream_written);
   // state->tqj_bitstream_written = job;
-  threadqueue_job_t *first_job = NULL;
+  //threadqueue_job_t *first_job = NULL;
   for (int i = 0; state->children[i].encoder_control; i++) {
 	  threadqueue_job_t *job =
 		  kvz_threadqueue_job_create(kvz_encoder_state_worker_slice_bitstream, &(state->children[i]));
