@@ -717,6 +717,8 @@ typedef struct kvz_api {
    */
   void(*encoder_stream_callback_fptr)(kvz_encoder * encoder, void(*fptr)(void *arg));
 
+  int(*frames_to_do)(kvz_encoder* encoder);
+
 } kvz_api;
 
 

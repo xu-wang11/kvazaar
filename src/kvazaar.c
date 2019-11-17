@@ -413,6 +413,10 @@ static void kvz_encoder_stream_callback_fptr(kvz_encoder* encoder, void(*fptr)(v
 	encoder->stream_callback_fptr = fptr;
 }
 
+static int kvz_frames_to_do(kvz_encoder* encoder)
+{
+	return encoder->frames_started - encoder->frames_done;
+}
 
 static const kvz_api kvz_8bit_api = {
   .config_alloc = kvz_config_alloc,
@@ -431,7 +435,8 @@ static const kvz_api kvz_8bit_api = {
   .encoder_encode = kvazaar_field_encoding_adapter,
 
   .picture_alloc_csp = kvz_image_alloc,
-  .encoder_stream_callback_fptr = kvz_encoder_stream_callback_fptr
+  .encoder_stream_callback_fptr = kvz_encoder_stream_callback_fptr,
+  .frames_to_do=kvz_frames_to_do
 };
 
 
