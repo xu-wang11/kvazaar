@@ -864,8 +864,8 @@ int kvz_config_parse(kvz_config *cfg, const char *name, const char *value)
   else if OPT("tiles-encoding-priority") {
 	  int32_t max_tile_id = cfg->tiles_width_count * cfg->tiles_height_count;
 
-	  // 最后一个为边界位
-	  int32_t* values = (int32_t*)malloc(sizeof(int32_t) * (max_tile_id + 1));
+	  // format: len,priority_val1,tile_id1,tile_id2,priority_val2,tile_id3,tile_id4....
+	  int32_t* values = (int32_t*)malloc(sizeof(int32_t) * (max_tile_id  * 2 + 1));
 	  const char* current_arg = value;
 	  int32_t current_value;
 

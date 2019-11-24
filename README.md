@@ -1,5 +1,7 @@
 # kvazaar
 An open-source HEVC encoder
+## encoding priority format
+`array_len,-priority1,tile1,tile2,-priority2,tile3,tile4`
 
 # modification:
   - support tile encoding priority: add `tiles_encoding_priority` to `kvz_config` and pass the encoder to `threadqueue_queue_t`, when a ready job is push into the `threadqueue_queue_t`, insert it according to its priority``

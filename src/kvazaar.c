@@ -418,6 +418,42 @@ static int kvz_frames_read(kvz_encoder* encoder)
 	return encoder->frames_started;
 }
 
+static int kvz_set_encoding_priority(kvz_encoder* encoder, const char* priority)
+{
+  kvz_config* cfg = &(encoder->control->cfg);
+  int32_t max_tile_id = cfg->tiles_width_count * cfg->tiles_height_count;
+
+	  // format: len,priority_val1,tile_id1,tile_id2,priority_val2,tile_id3,tile_id4....
+	  int32_t* values = (int32_t*)malloc(sizeof(int32_t) * (max_tile_id  * 2 + 1));
+	  const char* current_arg = priority;
+	  int32_t current_value;
+
+	  int32_t priority_index = 0;
+	  do {
+		  int ret = sscanf(current_arg, "%d", &current_value);
+		  if (ret != 1) {
+			  fprintf(stderr, "Could not parse integer \"%s\"!\n", current_arg);
+			  return 0;
+		  }
+		  current_arg = strchr(current_arg, ',');
+		  //Skip the , if we found one
+		  if (current_arg) ++current_arg;
+		  if (current_value >= max_tile_id)
+		  {
+			  fprintf(stderr, "tile id is incorrect.");
+		  }
+		  values[priority_index] = current_value;
+		  ++priority_index;
+		  if (max_tile_id <= priority_index) {
+			  fprintf(stderr, "priority tile is too much.");
+		  }
+	  } while (current_arg);
+	  values[priority_index] = -1;
+	  cfg->tiles_encoding_priority = values;
+  //encoder->control->cfg.tiles_encoding_priority = ;
+   return 1;  
+}
+
 static int kvz_frames_write(kvz_encoder* encoder)
 {
   return encoder->frames_done;
@@ -441,7 +477,8 @@ static const kvz_api kvz_8bit_api = {
 
   .picture_alloc_csp = kvz_image_alloc,
   .frames_read=kvz_frames_read,
-  .frames_write=kvz_frames_write
+  .frames_write=kvz_frames_write,
+  .set_encoding_priority=kvz_set_encoding_priority
 };
 
 

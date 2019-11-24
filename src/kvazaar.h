@@ -296,8 +296,8 @@ typedef struct kvz_config
   int32_t* tiles_width_split;      /*!< \brief tiles split x coordinates (dimension: tiles_width_count) */
   int32_t* tiles_height_split;      /*!< \brief tiles split y coordinates (dimension: tiles_height_count) */
 
-  // ����tile priority
-  int32_t* tiles_encoding_priority; /*Ĭ��Ϊ0��1��2��3��4...*/
+  // tile priority
+  int32_t* tiles_encoding_priority; /* encoding tile priority...*/
   
   int wpp;
   int owf;
@@ -714,6 +714,7 @@ typedef struct kvz_api {
 
   int(*frames_read)(kvz_encoder* encoder);
   int(*frames_write)(kvz_encoder* encoder);
+  int(*set_encoding_priority)(kvz_encoder* encoder, const char* priority);
 
 } kvz_api;
 

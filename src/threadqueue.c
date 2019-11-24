@@ -248,13 +248,22 @@ static void threadqueue_push_job(threadqueue_queue_t * threadqueue,
 	  else if (state->type == ENCODER_STATE_TYPE_TILE) {
 		  tile_id = state->tile->id;
 	  }
+    state->encoding_priority = 0;
 	  struct kvz_encoder* encoder = threadqueue->encoder;
 	  int32_t* priority_arr = encoder->control->cfg.tiles_encoding_priority;
-	  for (int i = 0; priority_arr[i] >= 0; i++) {
-		  if (priority_arr[i] == tile_id) {
-			  state->encoding_priority = 1;
+    if(priority_arr != NULL)
+    {
+    int32_t priority_arr_len = priority_arr[0];
+	  int priority_val = 0;
+    for (int i = 0; i < priority_arr_len; i++) {
+		  if (priority_arr[i + 1] < 0){
+        priority_val = - priority_arr[i + 1];
+      }
+      if (priority_arr[i + 1] == tile_id) {
+			  state->encoding_priority = priority_val;
 		  }
 	  }
+    }
 	  
 	  threadqueue_job_t* prev = NULL;
 	  threadqueue_job_t* tail = threadqueue->first;
