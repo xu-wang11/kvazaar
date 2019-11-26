@@ -90,7 +90,7 @@ static kvz_encoder * kvazaar_open(const kvz_config *cfg, void(*fptr)(int arg0, v
 
   encoder->stream_callback_fptr = fptr;
 
-  //��ʼ���������Ŀ������ı���
+  //
   encoder->control = kvz_encoder_control_init(cfg, encoder);
   if (!encoder->control) {
     goto kvazaar_open_failure;
@@ -109,7 +109,7 @@ static kvz_encoder * kvazaar_open(const kvz_config *cfg, void(*fptr)(int arg0, v
     goto kvazaar_open_failure;
   }
 
-  //ÿһ������֡��ָ����ͬһ��control
+  //
   for (unsigned i = 0; i < encoder->num_encoder_states; ++i) {
     encoder->states[i].encoder_control = encoder->control;
 

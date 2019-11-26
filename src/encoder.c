@@ -324,13 +324,13 @@ encoder_control_t* kvz_encoder_control_init(const kvz_config *const cfg, kvz_enc
 
   kvz_scalinglist_process(&encoder->scaling_list, encoder->bitdepth);
   
-  //³õÊ¼»¯ÁËwidth_in_lcu ºÍheight_in_lcuµÄ±äÁ¿
+  //
   kvz_encoder_control_input_init(encoder, encoder->cfg.width, encoder->cfg.height);
 
   if (encoder->cfg.framerate_num != 0) {
     double framerate = encoder->cfg.framerate_num / (double)encoder->cfg.framerate_denom;
 
-	//bppic Ó¦¸ÃÊÇÃ¿Ò»Ö¡µÄ±ÈÌØÂÊµÄÒâË¼
+	//
     encoder->target_avg_bppic = encoder->cfg.target_bitrate / framerate;
   } else {
     encoder->target_avg_bppic = encoder->cfg.target_bitrate / encoder->cfg.framerate;
@@ -375,7 +375,6 @@ encoder_control_t* kvz_encoder_control_init(const kvz_config *const cfg, kvz_enc
     const int num_ctbs = encoder->in.width_in_lcu * encoder->in.height_in_lcu;
 
     //Temporary pointers to allow encoder fields to be const
-	//bdÎªborderµÄÒâË¼
     int32_t *tiles_col_width, *tiles_row_height, *tiles_ctb_addr_rs_to_ts, *tiles_ctb_addr_ts_to_rs, *tiles_tile_id, *tiles_col_bd, *tiles_row_bd;
 
     if (encoder->cfg.tiles_width_count > encoder->in.width_in_lcu) {
@@ -467,7 +466,7 @@ encoder_control_t* kvz_encoder_control_init(const kvz_config *const cfg, kvz_enc
 
     //(6-7) in ITU-T Rec. H.265 (04/2013)
     //j == ctbAddrRs
-	// tiles_ctb_addr_rs_to_ts ÊÇÏÈ°´ÕÕtileµÄ±àºÅË³Ðò
+	// tiles_ctb_addr_rs_to_ts ï¿½ï¿½ï¿½È°ï¿½ï¿½ï¿½tileï¿½Ä±ï¿½ï¿½Ë³ï¿½ï¿½
 	// |1.2.3|10.11.12|
 	// |4.5.6|13.14.15|
 	// |7.8.9|16.17.18|
@@ -496,7 +495,7 @@ encoder_control_t* kvz_encoder_control_init(const kvz_config *const cfg, kvz_enc
                                      tbX - tiles_col_bd[tileX];
     }
 	
-	// tiles_ctb_addr_ts_to_rs ÊÇÕý³£µÄÃ¿Ò»¸ölcuµÄ±àºÅ
+	// tiles_ctb_addr_ts_to_rs ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿Ò»ï¿½ï¿½lcuï¿½Ä±ï¿½ï¿½
     //(6-8) in ITU-T Rec. H.265 (04/2013)
     //Make reverse map from tile scan to raster scan
     for (int j = 0; j < num_ctbs; ++j) {
@@ -522,7 +521,7 @@ encoder_control_t* kvz_encoder_control_init(const kvz_config *const cfg, kvz_enc
     }
 
 	// 
-	// slice_addresses_in_ts Õâ¸öÖ¸¶¨ÁËÃ¿Ò»¸ösliceÖÐ°üº¬µÄµÚÒ»¸ölcu
+	// slice_addresses_in_ts ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½Ã¿Ò»ï¿½ï¿½sliceï¿½Ð°ï¿½ï¿½ï¿½ï¿½Äµï¿½Ò»ï¿½ï¿½lcu
     //Slices
     if (encoder->cfg.slices & KVZ_SLICES_TILES) {
       // Configure a single independent slice per tile.
@@ -711,7 +710,7 @@ void kvz_encoder_control_input_init(encoder_control_t * const encoder,
   encoder->in.height_in_lcu = encoder->in.height / LCU_WIDTH;
   encoder->in.width_in_lcu  = encoder->in.width / LCU_WIDTH;
 
-  // ÉÏÃæÏÈÍ¨¹ý²¹ÏñËØµÄ·½·¨£¬ÈÃÍ¼Æ¬ÄÜÖÁÉÙ±»·Ö¸î³É×îÐ¡µÄcu£¬LCU_WIDTH ÊÇ×î´óµÄCU,ËùÒÔÈç¹ûÃ»ÓÐÕû³ýµÄ»°ÐèÒª¼Ó1
+  
   // Add one extra LCU when image not divisible by LCU_WIDTH
   if (encoder->in.height_in_lcu * LCU_WIDTH < height) {
     encoder->in.height_in_lcu++;
