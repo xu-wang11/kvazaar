@@ -424,6 +424,7 @@ typedef struct kvz_picture {
   enum kvz_chroma_format chroma_format;
 
   int32_t ref_pocs[16];
+  int32_t origin_frame_id;
 } kvz_picture;
 
 /**
@@ -631,7 +632,7 @@ typedef struct kvz_api {
    * \param cfg   encoder configuration
    * \return      created encoder, or NULL if creation failed.
    */
-  kvz_encoder * (*encoder_open)(const kvz_config *cfg, void(*fptr)(int, void *arg));
+  kvz_encoder * (*encoder_open)(const kvz_config *cfg, void(*fptr)(int, int, void *arg));
 
   /**
    * \brief Deallocate an encoder.

@@ -1129,7 +1129,7 @@ void kvz_encoder_state_worker_parameters_bitstream(void * opaque) {
 	//}
 	
 	kvz_data_chunk* chunks = kvz_bitstream_take_chunks(&state->stream);
-	state->encoder_control->stream_callback_fptr(-1, chunks);
+	state->encoder_control->stream_callback_fptr(state->origin_frame_id, -1, chunks);
 
 	//Get bitstream length for stats
 	uint64_t newpos = kvz_bitstream_tell(stream);
@@ -1175,7 +1175,7 @@ void kvz_encoder_state_worker_slice_bitstream(void * opaque)
 		}
 	
  	kvz_data_chunk* chunks = kvz_bitstream_take_chunks(&state->stream);
-	state->encoder_control->stream_callback_fptr(state->slice->id, chunks);
+	state->encoder_control->stream_callback_fptr(state->origin_frame_id, state->slice->id, chunks);
 
 	uint64_t newpos = kvz_bitstream_tell(&state->stream);
 	state->parent->stats_bitstream_length += (newpos >> 3);

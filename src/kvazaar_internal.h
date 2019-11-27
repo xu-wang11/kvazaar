@@ -38,7 +38,7 @@ struct encoder_control_t;
 
 struct kvz_encoder {
 	
-  void(*stream_callback_fptr)(int arg0, void *arg1);
+  void(*stream_callback_fptr)(int arg0, int arg1, void *arg2);
   const struct encoder_control_t* control;
   struct encoder_state_t* states;
   unsigned num_encoder_states;

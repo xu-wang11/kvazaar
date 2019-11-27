@@ -72,7 +72,7 @@ static void kvazaar_close(kvz_encoder *encoder)
 }
 
 
-static kvz_encoder * kvazaar_open(const kvz_config *cfg, void(*fptr)(int arg0, void *arg1))
+static kvz_encoder * kvazaar_open(const kvz_config *cfg, void(*fptr)(int arg0, int arg1, void *arg2))
 {
   kvz_encoder *encoder = NULL;
 

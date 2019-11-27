@@ -105,7 +105,7 @@ typedef struct encoder_control_t
 
   //Slices
   int slice_count;
-  const int* slice_addresses_in_ts; // Ã¿Ò»¸ötile¶ÔÓ¦Ò»¸öslice£¬Õâ¸öµØÖ·ÎªÃ¿Ò»¸ötileµÄµÚÒ»¸ölcuµÄts,Èç¹û½ö½öÊÇsliceµÄ»°£¬¾ÍÊÇÆ½¾ù·ÖÍ¼Æ¬µÄslice
+  const int* slice_addresses_in_ts; // Ã¿Ò»ï¿½ï¿½tileï¿½ï¿½Ó¦Ò»ï¿½ï¿½sliceï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ÎªÃ¿Ò»ï¿½ï¿½tileï¿½Äµï¿½Ò»ï¿½ï¿½lcuï¿½ï¿½ts,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½sliceï¿½Ä»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ½ï¿½ï¿½ï¿½ï¿½Í¼Æ¬ï¿½ï¿½slice
 
   threadqueue_queue_t *threadqueue;
 
@@ -133,7 +133,7 @@ typedef struct encoder_control_t
     int down;
   } max_inter_ref_lcu;
 
-  void(*stream_callback_fptr)(int arg0, void *arg1);
+  void(*stream_callback_fptr)(int arg0, int arg1, void *arg2);
 
 } encoder_control_t;
 

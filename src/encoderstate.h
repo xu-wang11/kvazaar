@@ -290,6 +290,7 @@ typedef struct encoder_state_t {
   //Jobs to wait for
   threadqueue_job_t * tqj_recon_done; //Reconstruction is done
   threadqueue_job_t * tqj_bitstream_written; //Bitstream is written
+  int32_t  origin_frame_id;
 } encoder_state_t;
 
 void kvz_encode_one_frame(encoder_state_t * const state, kvz_picture* frame);

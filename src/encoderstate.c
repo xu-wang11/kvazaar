@@ -1189,7 +1189,6 @@ static void normalize_lcu_weights(encoder_state_t * const state)
 
 static void encoder_state_init_new_frame(encoder_state_t * const state, kvz_picture* frame) {
   assert(state->type == ENCODER_STATE_TYPE_MAIN);
-
   const kvz_config * const cfg = &state->encoder_control->cfg;
 
   encoder_set_source_picture(state, frame);
@@ -1306,6 +1305,7 @@ static void _encode_one_frame_add_bitstream_deps(const encoder_state_t * const s
 void kvz_encode_one_frame(encoder_state_t * const state, kvz_picture* frame)
 {
   encoder_state_init_new_frame(state, frame);
+  state->origin_frame_id = frame->origin_frame_id;
   encoder_state_encode(state);
 
   threadqueue_job_t *job1 =
@@ -1324,6 +1324,7 @@ void kvz_encode_one_frame(encoder_state_t * const state, kvz_picture* frame)
   // state->tqj_bitstream_written = job;
   //threadqueue_job_t *first_job = NULL;
   for (int i = 0; state->children[i].encoder_control; i++) {
+    state->children[i].origin_frame_id = frame->origin_frame_id;
 	  threadqueue_job_t *job =
 		  kvz_threadqueue_job_create(kvz_encoder_state_worker_slice_bitstream, &(state->children[i]));
 	  _encode_one_frame_add_bitstream_deps(&(state->children[i]), job);
