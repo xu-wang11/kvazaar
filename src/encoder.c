@@ -466,7 +466,7 @@ encoder_control_t* kvz_encoder_control_init(const kvz_config *const cfg, kvz_enc
 
     //(6-7) in ITU-T Rec. H.265 (04/2013)
     //j == ctbAddrRs
-	// tiles_ctb_addr_rs_to_ts ���Ȱ���tile�ı��˳��
+	// tiles_ctb_addr_rs_to_ts tile
 	// |1.2.3|10.11.12|
 	// |4.5.6|13.14.15|
 	// |7.8.9|16.17.18|
